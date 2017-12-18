@@ -1,6 +1,8 @@
 import json
 from enum import Enum
 
+from common.DecodeError import DecodeError
+
 
 class ResponseError(Enum):
     BOTH = 0
@@ -36,7 +38,7 @@ class Responses:
         return value_dict
 
 
-class ResponseDecodeError(BaseException):
+class ResponseDecodeError(DecodeError):
     def __init__(self, res_err):
         if res_err == ResponseError.BOTH:
             self.message = "Too many keys in response"

@@ -1,5 +1,7 @@
 import json
 
+from common.DecodeError import DecodeError
+
 
 class Requests:
     @staticmethod
@@ -37,6 +39,6 @@ class Requests:
         return value_dict
 
 
-class RequestDecodeError(BaseException):
+class RequestDecodeError(DecodeError):
     def __init__(self, field):
         self.message = "Field {} does not exist".format(field)
