@@ -6,6 +6,13 @@ class S3:
         self.client = boto3.client("s3")
         self.name = name
 
+        response = self.client.list_buckets()
+        if "Buckets" in response:
+            buckets = response["Buckets"]
+            count = sum(1 for bucket in buckets if bucket["Name"] == name)
+            if count > 0:
+                return
+
         self.client.create_bucket(
             ACL="public-read-write",
             Bucket=name,

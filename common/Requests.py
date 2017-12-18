@@ -1,6 +1,6 @@
 import json
 
-from common import *
+from common.DecodeError import KeyErrorEnum, DecodeError
 
 
 class Requests:
@@ -43,4 +43,4 @@ class Requests:
 
 class RequestDecodeError(DecodeError):
     def __init__(self, key_err_enum):
-        super(key_err_enum)
+        super().__init__(key_err_enum)

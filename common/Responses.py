@@ -1,7 +1,5 @@
 import json
 
-from common import *
-
 
 class Responses:
     @staticmethod
