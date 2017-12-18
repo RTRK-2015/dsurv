@@ -1,5 +1,7 @@
 import json
 
+from common.DecodeError import KeyErrorEnum, DecodeError
+
 
 class Responses:
     @staticmethod
