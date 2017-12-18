@@ -1,12 +1,6 @@
 import json
-from enum import Enum
 
-from common import DecodeError
-
-
-class ResponseError(Enum):
-    BOTH = 0
-    NONE = 1
+from common import *
 
 
 class Responses:
@@ -29,9 +23,9 @@ class Responses:
         is_error = "error" in value_dict
         if is_error == is_s3url:
             if is_error:
-                error_type = ResponseError.BOTH
+                error_type = KeyErrorEnum.TOO_MANY
             else:
-                error_type = ResponseError.NONE
+                error_type = KeyErrorEnum.TOO_FEW
 
             raise ResponseDecodeError(error_type)
 
@@ -39,8 +33,5 @@ class Responses:
 
 
 class ResponseDecodeError(DecodeError):
-    def __init__(self, res_err):
-        if res_err == ResponseError.BOTH:
-            self.message = "Too many keys in response"
-        elif res_err == ResponseError.NONE:
-            self.message = "Too few keys in response"
+    def __init__(self, key_err_enum):
+        super(key_err_enum)
