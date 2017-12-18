@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 
-from common.DecodeError import DecodeError
+from common import DecodeError
 
 
 class ResponseError(Enum):

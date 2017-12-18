@@ -1,6 +1,6 @@
 import json
 
-from common.DecodeError import DecodeError
+from common import DecodeError
 
 
 class Requests:
