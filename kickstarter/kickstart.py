@@ -128,12 +128,19 @@ def start(args):
 
 
 def stop(args):
-    #TODO:
-    pass
+
+    handler = EC2Handler()
+
+    with open("instance_id.txt", "r") as f:
+        i_id = f.read()
+
+    handler.term(i_id)
 
 
 def main():
     args = parse()
+    print(args)
+    print(args.start)
 
     is_start = args.start
 
