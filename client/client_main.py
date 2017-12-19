@@ -10,7 +10,7 @@ def parse():
         "-i",
         "--input_file",
         help="the name of the file to be processed",
-        default="client_main.py"
+        default="lorem.txt"
     )
 
     parser.add_argument(
@@ -31,7 +31,7 @@ def parse():
         "-b",
         "--srv_b",
         help="the name of the server bucket",
-        default="titos-treasury"
+        default="titos-treasury-1234"
     )
 
     parser.add_argument(
