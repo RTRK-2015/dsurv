@@ -1,3 +1,4 @@
+import json
 import time
 import uuid
 import os
@@ -28,7 +29,10 @@ def process_all(words):
     result = {}
 
     for word in words:
-        result[word] += 1
+        if word not in result:
+            result[word] = 1
+        else:
+            result[word] += 1
 
     return result
 
@@ -44,14 +48,14 @@ def process_certain(words, check_words):
 
 def process(text, check_words):
     words = text.split()
-    words.map(lambda word: re.sub("[^A-Za-z']", lambda _: "", word))
+    words = list(map(lambda word: re.sub("[^A-Za-z']", lambda _: "", word), words))
 
     if check_words is None:
-        process_all(words)
+        return process_all(words)
     elif len(check_words) == 0:
         return {}
     else:
-        process_certain(words, check_words)
+        return process_certain(words, check_words)
 
 
 def respond_error(queue_name):
@@ -68,6 +72,7 @@ def respond_success(queue_name, local_file):
         local_file=local_file,
         remote_file="a.txt"
     )
+    os.remove(local_file)
     SQS(queue_name).send(
         msg=Responses.encode_success("{} a.txt".format(bucket_name)),
         attrs={}
@@ -75,14 +80,14 @@ def respond_success(queue_name, local_file):
 
 
 def handle(text, words, queue_name):
-    local_file = str(uuid.uuid4())
-    with open(local_file) as f:
-        processed = process(text, words)
-        if processed is None:
-            respond_error(queue_name)
-        else:
-            respond_success(queue_name, local_file)
-        os.remove(local_file)
+    processed = process(text, words)
+    if processed is None:
+        respond_error(queue_name)
+    else:
+        local_file = str(uuid.uuid4())
+        with open(local_file, "w") as f:
+            f.write(json.dumps(processed))
+        respond_success(queue_name, local_file)
 
 
 def handle_json_request(msg, in_bucket_name):
@@ -108,6 +113,7 @@ class Server:
     def __init__(self, queue_name, bucket_name):
         self.queue = SQS(queue_name)
         self.bucket_name = bucket_name
+        self.bucket = S3(bucket_name)
 
     def __enter__(self):
         return self
@@ -128,7 +134,7 @@ class Server:
             else:
                 Process(
                     target=handle_json_request,
-                    args=(msg, self.bucket_name)
+                    args=(msg["Body"], self.bucket_name)
                 ).start()
         except ValueError:
             print("Ignoring invalid json: {}".format(msg))

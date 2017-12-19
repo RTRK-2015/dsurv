@@ -10,7 +10,7 @@ def parse_args():
         "-b",
         "--bucket",
         help="Name of the server bucket",
-        default="titos-treasury"
+        default="titos-treasury-1"
     )
 
     parser.add_argument(

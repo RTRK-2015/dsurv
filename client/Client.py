@@ -75,7 +75,7 @@ class Client:
                 time.sleep(0.005)
                 continue
 
-            return Responses.decode()
+            return Responses.decode(res["Body"])
 
     def get_file(self, s3url):
         #s3url has the following format:
