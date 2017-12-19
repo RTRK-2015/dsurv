@@ -12,6 +12,22 @@ from common.S3 import S3
 from common.SQS import SQS
 
 
+class S3Deleter:
+    def __init__(self, bucket_name):
+        self.bucket_name = bucket_name
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        S3.destroy(self.bucket_name)
+
+
+def delayed_delete(bucket_name):
+    with S3Deleter(bucket_name):
+        time.sleep(10 * 60)
+
+
 def get_bucket_file_data(in_bucket_name, remote_file):
     bucket = S3(in_bucket_name)
     local_file = str(uuid.uuid4())
@@ -77,6 +93,10 @@ def respond_success(queue_name, local_file):
         msg=Responses.encode_success("{} a.txt".format(bucket_name)),
         attrs={}
     )
+    Process(
+        target=delayed_delete,
+        args=(bucket_name,)
+    ).start()
 
 
 def handle(text, words, queue_name):
@@ -136,8 +156,10 @@ class Server:
                     target=handle_json_request,
                     args=(msg["Body"], self.bucket_name)
                 ).start()
-        except ValueError:
-            print("Ignoring invalid json: {}".format(msg))
-        except DecodeError:
-            print("Ignoring invalid request: {}".format(msg))
+        except ValueError as e:
+            print("Ignoring invalid json: {}\n{}".format(msg, e))
+        except DecodeError as e:
+            print("Ignoring invalid request: {}\n{}".format(msg, e))
+        except BaseException as e:
+            print("Ignoring exception: {}\n".format(e))
 

@@ -64,3 +64,9 @@ class S3:
             }
         )
 
+    @staticmethod
+    def destroy(bucket_name):
+        client = boto3.client("s3")
+        client.delete_bucket(
+            Bucket=bucket_name
+        )
