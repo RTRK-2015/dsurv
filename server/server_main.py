@@ -24,8 +24,10 @@ def parse_args():
 
 
 def main():
+    print("Parsing arguments")
     args = parse_args()
 
+    print("Running server")
     with Server(args.queue, args.bucket) as srv:
         srv.run()
 

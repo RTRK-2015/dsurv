@@ -143,6 +143,7 @@ class Server:
         self.queue.__exit__(exc_type, exc_val, exc_tb)
 
     def run(self):
+        print("Receiving and handling messages")
         while True:
             self.receive_and_handle()
 
@@ -152,6 +153,7 @@ class Server:
             if msg is None:
                 time.sleep(0.005)
             else:
+                print("Got message: \t{}".format(msg))
                 Process(
                     target=handle_json_request,
                     args=(msg["Body"], self.bucket_name)
