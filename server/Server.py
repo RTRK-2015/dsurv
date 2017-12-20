@@ -28,6 +28,17 @@ def delayed_delete(bucket_name):
         time.sleep(10 * 60)
 
 
+def send_error(queue_name):
+    try:
+        sqs = SQS(queue_name)
+        sqs.send(
+            msg=Responses.encode_fail("Shit hit the fan"),
+            attrs={}
+        )
+    except BaseException as e:
+        print("Well, that went really wrong: {}", e)
+
+
 def get_bucket_file_data(in_bucket_name, remote_file):
     bucket = S3(in_bucket_name)
     local_file = str(uuid.uuid4())
@@ -111,22 +122,34 @@ def handle(text, words, queue_name):
 
 
 def handle_json_request(msg, in_bucket_name):
-    req = Requests.decode(msg)
+    queue_name = "whoops"
 
-    if "text" in req:
-        print("Handling direct request: {}".format(req))
-        text = req["text"]
-    elif "url" in req:
-        print("Handling file request: {}".format(req))
-        text = get_bucket_file_data(in_bucket_name, req["url"])
-    else:
-        print("Valid, yet invalid request: {}".format(req))
-        raise RuntimeError("Valid, yet invalid request")
+    try:
+        req = Requests.decode(msg)
 
-    words = req["words"]
-    queue_name = req["queue_name"]
+        if "text" in req:
+            print("Handling direct request: {}".format(req))
+            text = req["text"]
+        elif "url" in req:
+            print("Handling file request: {}".format(req))
+            text = get_bucket_file_data(in_bucket_name, req["url"])
+        else:
+            print("Valid, yet invalid request: {}".format(req))
+            raise RuntimeError("Valid, yet invalid request")
 
-    handle(text, words, queue_name)
+        words = req["words"]
+        queue_name = req["queue_name"]
+
+        handle(text, words, queue_name)
+    except ValueError as e:
+        print("Ignoring invalid json: {}\n{}".format(msg, e))
+        send_error(queue_name)
+    except DecodeError as e:
+        print("Ignoring invalid request: {}\n{}".format(msg, e))
+        send_error(queue_name)
+    except BaseException as e:
+        print("Ignoring exception: {}\n".format(e))
+        send_error(queue_name)
 
 
 class Server:
@@ -148,8 +171,8 @@ class Server:
             self.receive_and_handle()
 
     def receive_and_handle(self):
-        msg = self.queue.recv()
         try:
+            msg = self.queue.recv()
             if msg is None:
                 time.sleep(0.005)
             else:
@@ -158,10 +181,7 @@ class Server:
                     target=handle_json_request,
                     args=(msg["Body"], self.bucket_name)
                 ).start()
-        except ValueError as e:
-            print("Ignoring invalid json: {}\n{}".format(msg, e))
-        except DecodeError as e:
-            print("Ignoring invalid request: {}\n{}".format(msg, e))
         except BaseException as e:
-            print("Ignoring exception: {}\n".format(e))
+            print("Ignoring exception {}\n".format(e))
+
 
