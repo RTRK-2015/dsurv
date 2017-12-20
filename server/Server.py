@@ -44,18 +44,19 @@ def send_error(queue_name):
 # Helper function to download and read data from the input bucket.
 def get_bucket_file_data(in_bucket_name, remote_file):
     local_file = str(uuid.uuid4())
-    with open(local_file) as f:
-        bucket = S3(in_bucket_name)
-        try:
-            bucket.download(
-                local_file=local_file,
-                remote_file=remote_file
-            )
-            text = f.read()
-        finally:
-            os.remove(local_file)
 
+    try:
+        bucket = S3(in_bucket_name)
+        bucket.download(
+            local_file=local_file,
+            remote_file=remote_file
+        )
+
+        with open(local_file) as f:
+            text = f.read()
         return text
+    finally:
+        os.remove(local_file)
 
 
 # Function that counts all words
