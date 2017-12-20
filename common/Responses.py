@@ -3,19 +3,24 @@ import json
 from common.DecodeError import KeyErrorEnum, DecodeError
 
 
+# A static class to help with encoding and decoding JSON server->client responses.
 class Responses:
+    # Encodes a success response to JSON.
     @staticmethod
     def encode_success(s3url):
         return json.dumps({
             "s3url": s3url
         })
 
+    # Encodes a failure response to JSON.
     @staticmethod
     def encode_fail(err_msg):
         return json.dumps({
             "error": err_msg
         })
 
+    # Decodes a JSON string to a dictionary, or throws an exception if the JSON string is in
+    # the wrong format.
     @staticmethod
     def decode(json_text):
         value_dict = json.loads(json_text)

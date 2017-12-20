@@ -1,7 +1,9 @@
 import boto3
 
 
+# Class that provides a more high-level interface to S3.
 class S3:
+    # Constructs a bucket either by creating a new bucket, or opening it, if it already exists.
     def __init__(self, name):
         self.client = boto3.client("s3")
         self.name = name
@@ -24,13 +26,15 @@ class S3:
     def __enter__(self):
         return self
 
+    # Deletes the bucket
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.destroy_contents(self.name)
+        self.__destroy_contents(self.name)
         self.client.delete_bucket(
             Bucket=self.name
         )
 
-    def destroy_contents(self, bucket_name):
+    # Helper function to delete all objects in a bucket.
+    def __destroy_contents(self, bucket_name):
         response = self.client.list_objects_v2(
             Bucket=bucket_name,
         )
@@ -43,6 +47,7 @@ class S3:
                 }
             )
 
+    # Function that uploads a local file to the bucket.
     def upload(self, local_file, remote_file):
         self.__wait_exists()
         with open(local_file, "rb") as data:
@@ -52,6 +57,7 @@ class S3:
                 Key=remote_file
             )
 
+    # Function that downloads a remote bucket file to the computer.
     def download(self, local_file, remote_file):
         self.__wait_exists()
         with open(local_file, "wb") as data:
@@ -61,6 +67,7 @@ class S3:
                 Fileobj=data
             )
 
+    # Function that deletes a remote file from a bucket.
     def delete(self, remote_file):
         self.__wait_exists()
         self.client.delete_object(

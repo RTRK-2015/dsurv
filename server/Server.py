@@ -23,11 +23,13 @@ class S3Deleter:
         S3.destroy(self.bucket_name)
 
 
+# A helper function to delay deletion of output bucket by 10 minutes.
 def delayed_delete(bucket_name):
     with S3Deleter(bucket_name):
         time.sleep(10 * 60)
 
 
+# Helper function to send an error to the client if something went wrong.
 def send_error(queue_name):
     try:
         sqs = SQS(queue_name)
@@ -39,6 +41,7 @@ def send_error(queue_name):
         print("Well, that went really wrong: {}".format(e))
 
 
+# Helper function to download and read data from the input bucket.
 def get_bucket_file_data(in_bucket_name, remote_file):
     local_file = str(uuid.uuid4())
     with open(local_file) as f:
@@ -55,6 +58,7 @@ def get_bucket_file_data(in_bucket_name, remote_file):
         return text
 
 
+# Function that counts all words
 def process_all(words):
     result = {}
 
@@ -67,6 +71,7 @@ def process_all(words):
     return result
 
 
+# Function that counts only the words given by `check_words'.
 def process_certain(words, check_words):
     result = {}
 
@@ -76,25 +81,24 @@ def process_certain(words, check_words):
     return result
 
 
+# Function that unifies two types of word processing.
 def process(text, check_words):
     words = text.split()
     words = list(map(lambda word: re.sub("[^A-Za-z']", lambda _: "", word), words))
 
+    # If there were no given words to count, just count them all
     if check_words is None:
         return process_all(words)
+    # If the given words are actually an empty list, just return an empty object
     elif len(check_words) == 0:
         return {}
+    # Otherwise, count only the given words
     else:
         return process_certain(words, check_words)
 
 
-def respond_error(queue_name):
-    SQS(queue_name).send(
-        msg=Responses.encode_fail("I sense a disturbance in the Force"),
-        attrs={}
-    )
-
-
+# A helper function to respond successfully to the request. It uploads the
+# result file to a bucket and sends a message to the client.
 def respond_success(queue_name, local_file):
     bucket_name = "titos-{}".format(str(uuid.uuid4()))
     bucket = S3(bucket_name)
@@ -113,17 +117,16 @@ def respond_success(queue_name, local_file):
     ).start()
 
 
+# Unified handler, works with pure text
 def handle(text, words, queue_name):
     processed = process(text, words)
-    if processed is None:
-        respond_error(queue_name)
-    else:
-        local_file = str(uuid.uuid4())
-        with open(local_file, "w") as f:
-            f.write(json.dumps(processed))
-        respond_success(queue_name, local_file)
+    local_file = str(uuid.uuid4())
+    with open(local_file, "w") as f:
+        f.write(json.dumps(processed))
+    respond_success(queue_name, local_file)
 
 
+# Handles both request types by unifying them to a single request type.
 def handle_json_request(msg, in_bucket_name):
     queue_name = "whoops"
 
@@ -132,9 +135,11 @@ def handle_json_request(msg, in_bucket_name):
         words = req["words"]
         queue_name = req["queue_name"]
 
+        # If the request was of the "text" type, simply read the text from the request
         if "text" in req:
             print("Handling direct request: {}".format(req))
             text = req["text"]
+        # If the request was of the "url" type, use a helper function to read the text from the bucket.
         elif "url" in req:
             print("Handling file request: {}".format(req))
             text = get_bucket_file_data(in_bucket_name, req["url"])
@@ -142,6 +147,7 @@ def handle_json_request(msg, in_bucket_name):
             print("Valid, yet invalid request: {}".format(req))
             raise RuntimeError("Valid, yet invalid request")
 
+        # Delegate to unified handler
         handle(text, words, queue_name)
     except ValueError as e:
         print("Ignoring invalid json: {}\n{}".format(msg, e))
@@ -167,11 +173,13 @@ class Server:
         self.bucket.__exit__(exc_type, exc_val, exc_tb)
         self.queue.__exit__(exc_type, exc_val, exc_tb)
 
+    # Main "entry" point for server. Starts the infinite loop for message processing.
     def run(self):
         print("Receiving and handling messages")
         while True:
             self.receive_and_handle()
 
+    # Function that receives a message and starts a new process to handle the request
     def receive_and_handle(self):
         try:
             msg = self.queue.recv()

@@ -36,6 +36,8 @@ no_queue_name_prefix = "non-existing-"
 
 
 class TestServerFunctionality(unittest.TestCase):
+    # Sends some text directly to the server if `really' is true.
+    # If `really' is false, sends a request with the wrong queue.
     def send_direct(self, data, really):
         my_queue_name = my_queue_name_prefix + str(uuid.uuid4())
         no_queue_name = no_queue_name_prefix + str(uuid.uuid4())
@@ -83,6 +85,8 @@ class TestServerFunctionality(unittest.TestCase):
             os.remove(local_file)
             return decoded
 
+    # Sends a file to the server using an S3 bucket, if `really' is true.
+    # If `really' is false, sends a request without uploading the file.
     def send_file(self, name, really):
         my_queue_name = my_queue_name_prefix + str(uuid.uuid4())
         with SQS(my_queue_name) as my_queue:
@@ -137,11 +141,13 @@ class TestServerFunctionality(unittest.TestCase):
                 self.assertTrue("error" in res)
                 self.assertTrue("s3url" not in res)
 
+    # Tests that server can receive a file request.
     def test_normal_file(self):
         print("Testing normal file")
         decoded = self.send_file("lorem.txt", True)
         self.assertEqual(decoded["sed"], 185)
 
+    # Tests that server can receive a direct text request.
     def test_normal_direct(self):
         print("Testing normal direct")
         with open("lorem.txt", "r") as f:
@@ -149,20 +155,24 @@ class TestServerFunctionality(unittest.TestCase):
             decoded = self.send_direct(data, True)
             self.assertEqual(decoded["sed"], 185)
 
+    # Tests that server can receive an empty file request.
     def test_empty_file(self):
         print("Testing empty file")
         decoded = self.send_file("empty.txt", True)
         self.assertEqual(len(decoded), 0)
 
+    # Test that server can receive an empty direct text request.
     def test_empty_direct(self):
         print("Testing empty direct")
         decoded = self.send_direct("", True)
         self.assertEqual(len(decoded), 0)
 
+    # Tests that server can react to client not uploading a file.
     def test_no_file(self):
         print("Testing no file")
         self.send_file("blah.txt", False)
 
+    # Tests that server can react to client not sending a good queue name.
     def test_no_queue(self):
         print("Testing no queue")
         self.send_direct("lorem.txt", False)

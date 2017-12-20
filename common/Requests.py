@@ -3,7 +3,9 @@ import json
 from common.DecodeError import KeyErrorEnum, DecodeError
 
 
+# A static class to help with encoding and decoding JSON client->server requests.
 class Requests:
+    # Encodes a direct text request to JSON.
     @staticmethod
     def encode_direct(text, queue_name, words=None):
         return json.dumps({
@@ -12,6 +14,7 @@ class Requests:
             "queue_name": queue_name
         })
 
+    # Encodes a S3 file request to JSON.
     @staticmethod
     def encode_file(url, queue_name, words=None):
         return json.dumps({
@@ -20,6 +23,8 @@ class Requests:
             "queue_name": queue_name
         })
 
+    # Decodes a JSON string to a dictionary, or throws an exception if the JSON string is in
+    # the wrong format.
     @staticmethod
     def decode(json_text):
         value_dict = json.loads(json_text)
