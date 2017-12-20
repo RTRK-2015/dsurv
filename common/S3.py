@@ -25,9 +25,23 @@ class S3:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.destroy_contents(self.name)
         self.client.delete_bucket(
             Bucket=self.name
         )
+
+    def destroy_contents(self, bucket_name):
+        response = self.client.list_objects_v2(
+            Bucket=bucket_name,
+        )
+
+        while response['KeyCount'] > 0:
+            self.client.delete_objects(
+                Bucket=bucket_name,
+                Delete={
+                    'Objects': [{'Key': obj['Key']} for obj in response['Contents']]
+                }
+            )
 
     def upload(self, local_file, remote_file):
         self.__wait_exists()
