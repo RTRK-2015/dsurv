@@ -36,19 +36,22 @@ def send_error(queue_name):
             attrs={}
         )
     except BaseException as e:
-        print("Well, that went really wrong: {}", e)
+        print("Well, that went really wrong: {}".format(e))
 
 
 def get_bucket_file_data(in_bucket_name, remote_file):
-    bucket = S3(in_bucket_name)
     local_file = str(uuid.uuid4())
-    bucket.download(
-        local_file=local_file,
-        remote_file=remote_file
-    )
     with open(local_file) as f:
-        text = f.read()
-        os.remove(local_file)
+        bucket = S3(in_bucket_name)
+        try:
+            bucket.download(
+                local_file=local_file,
+                remote_file=remote_file
+            )
+            text = f.read()
+        finally:
+            os.remove(local_file)
+
         return text
 
 
@@ -126,6 +129,8 @@ def handle_json_request(msg, in_bucket_name):
 
     try:
         req = Requests.decode(msg)
+        words = req["words"]
+        queue_name = req["queue_name"]
 
         if "text" in req:
             print("Handling direct request: {}".format(req))
@@ -136,9 +141,6 @@ def handle_json_request(msg, in_bucket_name):
         else:
             print("Valid, yet invalid request: {}".format(req))
             raise RuntimeError("Valid, yet invalid request")
-
-        words = req["words"]
-        queue_name = req["queue_name"]
 
         handle(text, words, queue_name)
     except ValueError as e:
