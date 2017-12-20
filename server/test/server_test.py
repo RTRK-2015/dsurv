@@ -92,11 +92,11 @@ class TestServerFunctionality(unittest.TestCase):
         with SQS(my_queue_name) as my_queue:
             remote_file_name = my_queue_name + "-normal-file.txt"
             if really:
-                with S3(args.bucket) as s3:
-                    s3.upload(
-                        local_file=name,
-                        remote_file=remote_file_name
-                    )
+                s3 = S3(args.bucket)
+                s3.upload(
+                    local_file=name,
+                    remote_file=remote_file_name
+                )
 
             sqs = SQS(args.queue)
             sqs.send(
