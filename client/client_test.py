@@ -91,15 +91,17 @@ class TestClientCase(unittest.TestCase):
         res_q.send(res, {})
         res = self.cli.wait_response()
 
-    def xtest_response_error(self):
+    def test_response_error(self):
         res = Responses.encode_fail("Test error")
         res_q = SQS(self.cli.cli_q_name)
         res_q.send(res, {})
 
-        self.assertRaises(Exception, self.cli.wait_response())
+        with self.assertRaises(Exception):
+            self.cli.wait_response()
 
-    def xtest_no_response(self):
-        self.assertRaises(Exception, self.cli.wait_response())
+    def test_no_response(self):
+        with self.assertRaises(Exception):
+            self.cli.wait_response()
 
     def test_get_file(self):
         self.out_b.upload("{}".format(test_in_file), "a.txt")
