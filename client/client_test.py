@@ -19,12 +19,13 @@ g_count = 0
 
 class TestClientCase(unittest.TestCase):
 
-    def setUp():
+    def setUp(self):
+        global g_count
         self.count = g_count
         g_count += 1
 
-        self.in_b = S3("{}-{}".format(test_in_b, self.count))
         self.req_q = SQS("{}-{}".format(test_req_q, self.count))
+        self.in_b = S3("{}-{}".format(test_in_b, self.count))
         self.out_b = S3("{}-{}".format(test_out_b, self.count))
         self.cli = Client(
             "{}-{}".format(test_res_q, self.count),
@@ -32,7 +33,7 @@ class TestClientCase(unittest.TestCase):
             "{}-{}".format(test_in_b, self.count)
         )
 
-    def tearDown():
+    def tearDown(self):
         exc_type = None
         exc_val = None
         exc_tb = None
@@ -70,7 +71,7 @@ class TestClientCase(unittest.TestCase):
 
         self.in_b.download(req["url"], req["url"])
 
-    def xtest_direct_req(self):
+    def test_direct_req(self):
         self.cli.request(
             is_file=False,
             words=None,
@@ -83,7 +84,7 @@ class TestClientCase(unittest.TestCase):
             if key not in req:
                 self.fail("Invalid request")
 
-    def xtest_response(self):
+    def test_response(self):
         #self.out_b.upload("lorem.txt", "a.txt")
         res = Responses.encode_success("{} a.txt".format(self.out_b.name))
         res_q = SQS(self.cli.cli_q_name)
@@ -91,25 +92,23 @@ class TestClientCase(unittest.TestCase):
         res = self.cli.wait_response()
 
     def xtest_response_error(self):
-        res = Responses.encode_fail()
+        res = Responses.encode_fail("Test error")
         res_q = SQS(self.cli.cli_q_name)
-        res_q.send(res. {})
+        res_q.send(res, {})
 
         self.assertRaises(Exception, self.cli.wait_response())
 
     def xtest_no_response(self):
         self.assertRaises(Exception, self.cli.wait_response())
 
-    def xtest_get_file(self):
+    def test_get_file(self):
         self.out_b.upload("{}".format(test_in_file), "a.txt")
 
         self.cli.get_file("{} {}".format(self.out_b.name, "a.txt"))
 
-    def xtest_get_no_file(self):
-        self.assertRaises(
-            Exception,
+    def test_get_no_file(self):
+        with self.assertRaises(Exception):
             self.cli.get_file("{} {}".format(self.out_b.name, "a.txt"))
-        )
 
     def xtest_run(self):
         #TODO: implement? other methods all tested, redundant
