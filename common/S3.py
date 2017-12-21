@@ -39,7 +39,8 @@ class S3:
             Bucket=bucket_name,
         )
 
-        while response['KeyCount'] > 0:
+        #while response['KeyCount'] > 0:
+        if response['KeyCount'] > 0:
             self.client.delete_objects(
                 Bucket=bucket_name,
                 Delete={
