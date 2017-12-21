@@ -59,6 +59,13 @@ def parse():
         help="the list of words to count"
     )
 
+    parser.add_argument(
+        "-o",
+        "--output_file",
+        help="the output_file",
+        default="a.txt"
+    )
+
     return parser.parse_args()
 
 
@@ -74,6 +81,7 @@ def main():
     srv_b_name = args.srv_b
     is_file = args.file
     words = args.list
+    output_file = args.output_file
 
     with Client(
             cli_q_name=cli_q_name,
@@ -83,7 +91,8 @@ def main():
         cli.run(
             is_file=is_file,
             words=words,
-            input_file=input_file
+            input_file=input_file,
+            output_file=output_file
         )
 
 

@@ -20,7 +20,7 @@ class Client:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cli_q.__exit__(exc_type, exc_val, exc_tb)
 
-    def run(self, is_file, words, input_file):
+    def run(self, is_file, words, input_file, output_file):
         #send the request
         print("Sending request")
         self.request(
@@ -36,7 +36,7 @@ class Client:
 
         #get the file
         print("Getting file")
-        self.get_file(res["s3url"])
+        self.get_file(res["s3url"], output_file)
 
     def request(self, is_file, words, input_file):
         #2 types of requests
@@ -88,7 +88,7 @@ class Client:
 
             return dec
 
-    def get_file(self, s3url):
+    def get_file(self, s3url, output_file):
         #s3url has the following format:
         # "output_bucket_name output_file"
         #so we split them and use the names for the corresponding entities
@@ -97,4 +97,7 @@ class Client:
         out_f = splits[1]
 
         out_b = S3(out_b_name)
-        out_b.download(out_f, out_f)
+        out_b.download(
+            remote_file=out_f,
+            local_file=output_file
+        )
