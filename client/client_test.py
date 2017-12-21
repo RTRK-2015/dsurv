@@ -14,23 +14,32 @@ test_res_q = "test-response-queue"
 
 test_in_file = "lorem.txt"
 
+g_count = 0
+
 
 class TestClientCase(unittest.TestCase):
 
-    def set_up_req(self, req_q_name, in_b_name, res_q_name):
-        self.cli = Client(res_q_name, req_q_name, in_b_name)
-        self.in_b = S3(in_b_name)
-        #self.out_b = S3(test_out_b)
-        self.req_q = SQS(req_q_name)
+    def setUp():
+        self.count = g_count
+        g_count += 1
 
-    def tear_down_req(self):
+        self.in_b = S3("{}-{}".format(test_in_b, self.count))
+        self.req_q = SQS("{}-{}".format(test_req_q, self.count))
+        self.out_b = S3("{}-{}".format(test_out_b, self.count))
+        self.cli = Client(
+            "{}-{}".format(test_res_q, self.count),
+            "{}-{}".format(test_req_q, self.count),
+            "{}-{}".format(test_in_b, self.count)
+        )
+
+    def tearDown():
         exc_type = None
         exc_val = None
         exc_tb = None
         self.cli.__exit__(exc_type, exc_val, exc_tb)
         self.req_q.__exit__(exc_type, exc_val, exc_tb)
         self.in_b.__exit__(exc_type, exc_val, exc_tb)
-        #self.out_b.__exit__(exc_type, exc_val, exc_tb)
+        self.out_b.__exit__(exc_type, exc_val, exc_tb)
 
     def recv_req(self):
         count = 0
@@ -47,7 +56,6 @@ class TestClientCase(unittest.TestCase):
             self.fail("Did not receive request")
 
     def test_file_req(self):
-        self.set_up_req("test_file_req_q", "test_file_in_b", "test_file_res_q")
         self.cli.request(
             is_file=True,
             words=None,
@@ -61,8 +69,6 @@ class TestClientCase(unittest.TestCase):
                 self.fail("Invalid request")
 
         self.in_b.download(req["url"], req["url"])
-
-        self.tear_down_req()
 
     def xtest_direct_req(self):
         self.cli.request(
@@ -78,12 +84,37 @@ class TestClientCase(unittest.TestCase):
                 self.fail("Invalid request")
 
     def xtest_response(self):
-        # self.out_b.upload("lorem.txt", "a.txt")
-        # Responses.encode_success("{} a.txt".format(test_out_b))
-        # res = self.cli.wait_response()
-        pass
+        #self.out_b.upload("lorem.txt", "a.txt")
+        res = Responses.encode_success("{} a.txt".format(self.out_b.name))
+        res_q = SQS(self.cli.cli_q_name)
+        res_q.send(res, {})
+        res = self.cli.wait_response()
+
+    def xtest_response_error(self):
+        res = Responses.encode_fail()
+        res_q = SQS(self.cli.cli_q_name)
+        res_q.send(res. {})
+
+        self.assertRaises(Exception, self.cli.wait_response())
+
+    def xtest_no_response(self):
+        self.assertRaises(Exception, self.cli.wait_response())
 
     def xtest_get_file(self):
+        self.out_b.upload("{}".format(test_in_file), "a.txt")
+
+        self.cli.get_file("{} {}".format(self.out_b.name, "a.txt"))
+
+    def xtest_get_no_file(self):
+        self.assertRaises(
+            Exception,
+            self.cli.get_file("{} {}".format(self.out_b.name, "a.txt"))
+        )
+
+    def xtest_run(self):
+        #TODO: implement? other methods all tested, redundant
+        #"Mock" server run
+        #New Process client.run
         pass
 
 
