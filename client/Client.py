@@ -68,14 +68,25 @@ class Client:
 
     def wait_response(self):
         #straightforward blocking wait on response
+        count = 0
         while True:
             res = self.cli_q.recv()
 
+            #print(count)
+            if count > 100:
+                raise Exception("waiting for a response timed out")
+
             if res is None:
-                time.sleep(0.005)
+                count += 1
+                time.sleep(0.006)
                 continue
 
-            return Responses.decode(res["Body"])
+            dec = Responses.decode(res["Body"])
+
+            if "error" in dec:
+                raise Exception(dec["error"])
+
+            return dec
 
     def get_file(self, s3url):
         #s3url has the following format:
