@@ -83,17 +83,20 @@ def main():
     words = args.list
     output_file = args.output_file
 
-    with Client(
-            cli_q_name=cli_q_name,
-            srv_q_name=srv_q_name,
-            srv_b_name=srv_b_name
-    ) as cli:
-        cli.run(
-            is_file=is_file,
-            words=words,
-            input_file=input_file,
-            output_file=output_file
-        )
+    try:
+        with Client(
+                cli_q_name=cli_q_name,
+                srv_q_name=srv_q_name,
+                srv_b_name=srv_b_name
+        ) as cli:
+            cli.run(
+                is_file=is_file,
+                words=words,
+                input_file=input_file,
+                output_file=output_file
+            )
+    except BaseException as e:
+        print("The following error occured:\n{}".format(e))
 
 
 if __name__ == '__main__':

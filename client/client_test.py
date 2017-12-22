@@ -19,6 +19,8 @@ g_count = 0
 
 class TestClientCase(unittest.TestCase):
 
+    #standard setUp function to create instances of resources
+    # that test cases will use
     def setUp(self):
         global g_count
         self.count = g_count
@@ -33,6 +35,7 @@ class TestClientCase(unittest.TestCase):
             "{}-{}".format(test_in_b, self.count)
         )
 
+    #standard tearDown function to clean up the resources created in setUp
     def tearDown(self):
         exc_type = None
         exc_val = None
@@ -42,6 +45,7 @@ class TestClientCase(unittest.TestCase):
         self.in_b.__exit__(exc_type, exc_val, exc_tb)
         self.out_b.__exit__(exc_type, exc_val, exc_tb)
 
+    #helper function for receiving a message from the request queue
     def recv_req(self):
         count = 0
         while count < 20:
@@ -56,6 +60,8 @@ class TestClientCase(unittest.TestCase):
         else:
             self.fail("Did not receive request")
 
+    #Test case which tests whether or not a file request was completed successfully
+    #tests the @Client @request method
     def test_file_req(self):
         self.cli.request(
             is_file=True,
@@ -71,6 +77,8 @@ class TestClientCase(unittest.TestCase):
 
         self.in_b.download(req["url"], req["url"])
 
+    #Test case which tests whether or not a direct request was completed successfully
+    #tests the @Client @request method
     def test_direct_req(self):
         self.cli.request(
             is_file=False,
@@ -84,6 +92,8 @@ class TestClientCase(unittest.TestCase):
             if key not in req:
                 self.fail("Invalid request")
 
+    #Tests a successful response reception
+    #tests the Client <wait_response> method
     def test_response(self):
         #self.out_b.upload("lorem.txt", "a.txt")
         res = Responses.encode_success("{} a.txt".format(self.out_b.name))
@@ -91,6 +101,8 @@ class TestClientCase(unittest.TestCase):
         res_q.send(res, {})
         res = self.cli.wait_response()
 
+    #Tests a successful error response reception
+    #tests the @Client @wait_response method
     def test_response_error(self):
         res = Responses.encode_fail("Test error")
         res_q = SQS(self.cli.cli_q_name)
@@ -99,15 +111,21 @@ class TestClientCase(unittest.TestCase):
         with self.assertRaises(Exception):
             self.cli.wait_response()
 
+    #Tests an unsuccessful response reception
+    #tests the @Client @wait_response method
     def test_no_response(self):
         with self.assertRaises(Exception):
             self.cli.wait_response()
 
+    #Tests a successful reception of the output file
+    #test the @Client @get_file method
     def test_get_file(self):
         self.out_b.upload("{}".format(test_in_file), "a.txt")
 
         self.cli.get_file("{} {}".format(self.out_b.name, "a.txt"))
 
+    #Tests an unsuccessful reception of the output file
+    #tests the @Client @get_file method
     def test_get_no_file(self):
         with self.assertRaises(Exception):
             self.cli.get_file("{} {}".format(self.out_b.name, "a.txt"))
