@@ -123,8 +123,8 @@ def start(args):
     print("Finished waiting on create")
 
     print("writing id to file")
-    with open("instance_id.txt", "w") as f:
-        f.write(i_id)
+    with open("instance_id.txt", "a") as f:
+        f.write(i_id + "\n")
 
 
 def stop(args):
@@ -132,9 +132,15 @@ def stop(args):
     handler = EC2Handler()
 
     with open("instance_id.txt", "r") as f:
-        i_id = f.read()
+        #i_id = f.read()
+        for line in f:
+            reg = re.sub('\n', "", line)
+            try:
+                handler.term(reg)
+            except BaseException:
+                continue
 
-    handler.term(i_id)
+    #handler.term(i_id)
 
 
 def main():
